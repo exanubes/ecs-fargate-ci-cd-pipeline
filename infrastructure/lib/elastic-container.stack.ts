@@ -3,7 +3,7 @@ import {Duration, Stack, StackProps} from "aws-cdk-lib";
 import {Construct} from "constructs";
 import {IRepository} from "aws-cdk-lib/aws-ecr";
 import {
-    Cluster,
+    Cluster, ContainerDefinition,
     CpuArchitecture,
     EcrImage,
     FargateService,
@@ -14,7 +14,7 @@ import {
     ApplicationLoadBalancer,
     ApplicationProtocol,
     ApplicationProtocolVersion,
-    IApplicationLoadBalancer, ListenerAction,
+    ListenerAction,
     SslPolicy
 } from "aws-cdk-lib/aws-elasticloadbalancingv2";
 
@@ -28,11 +28,14 @@ const CONTAINER_PORT = 8081
 const CERTIFICATE_ARN = "arn:aws:acm:eu-central-1:123456789012:certificate/uuid"
 
 export class ElasticContainerStack extends Stack {
-    public readonly loadBalancer: IApplicationLoadBalancer
+    public readonly loadBalancer: ApplicationLoadBalancer
+    public readonly container: ContainerDefinition
+    public readonly service: FargateService
+    public readonly cluster: Cluster
 
     constructor(scope: Construct, id: string, props: Props) {
         super(scope, id, props)
-        const cluster = new Cluster(this, "exanubes-cluster", {
+        this.cluster = new Cluster(this, "exanubes-cluster", {
             vpc: props.vpc,
             clusterName: "exanubes-cluster",
             containerInsights: true,
@@ -86,10 +89,10 @@ export class ElasticContainerStack extends Stack {
                 },
             }
         )
-        const container = taskDefinition.addContainer("web-server", {
+        this.container = taskDefinition.addContainer("web-server", {
             image: EcrImage.fromEcrRepository(props.repository),
         })
-        container.addPortMappings({
+        this.container.addPortMappings({
             containerPort: CONTAINER_PORT,
         })
 
@@ -102,15 +105,16 @@ export class ElasticContainerStack extends Stack {
             Port.tcp(CONTAINER_PORT),
             "Allow inbound connections from ALB"
         )
-        const fargateService = new FargateService(this, "fargate-service", {
-            cluster,
+        this.service = new FargateService(this, "fargate-service", {
+            cluster: this.cluster,
             assignPublicIp: false,
             taskDefinition,
             securityGroups: [securityGroup],
             desiredCount: 1,
+            maxHealthyPercent: 100
         })
 
-        targetGroup.addTarget(fargateService)
+        targetGroup.addTarget(this.service)
 
 
     }
