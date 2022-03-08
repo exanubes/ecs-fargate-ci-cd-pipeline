@@ -1,7 +1,7 @@
-# Fargate App with SSL Certificate
+# CI/CD Pipeline for ECS Application
 
 
-Repository from [exanubes.com](https://exanubes.com) for [Deploying ECS Fargate Application](https://exanubes.com/blog/adding-ssl-certificate-to-fargate-app).
+Repository from [exanubes.com](https://exanubes.com) for [CI/CD pipeline for ECS application](https://exanubes.com/blog/ci-cd-pipeline-for-ecs-application).
 
 
 This repository is using AWS CDK v2 and is not compatible with AWS CDK v1 bootstrap stack.
@@ -12,8 +12,8 @@ Run the following commands for building, deploying and destroying stacks
 
 ```
 npm run build
-npm run cdk:deploy
-npm run cdk:destroy
+npm run cdk:deploy -- --all
+npm run cdk:destroy -- --all
 ```
 
 
